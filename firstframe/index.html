@@ -32,6 +32,7 @@ $('ffFile').addEventListener('change',async ev=>{
     list.push(photo);active=list.length-1;
     setStatus('Foto übernommen. Die Vorschau erscheint sofort; Analyse läuft …');
     render();
+    $('ffResults').scrollIntoView({behavior:'smooth',block:'start'});
     try{
       photo.a=await analyze(f);
       photo.pending=false;
