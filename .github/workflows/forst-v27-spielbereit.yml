@@ -1,0 +1,33 @@
+name: Forst V27 spielbereit
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'forst-privat-2026/build-v27.cjs'
+      - 'forst-privat-2026/forst-buch-v27.enc.json'
+      - '.github/workflows/forst-v27-spielbereit.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate and assemble standalone game
+        run: node forst-privat-2026/build-v27.cjs
+      - name: Publish standalone V27
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add forst-spielbereit/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish standalone playable Forst V27'
+            git push
+          fi
