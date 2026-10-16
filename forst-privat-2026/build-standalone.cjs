@@ -30,7 +30,7 @@ const context = vm.createContext({
   // srcdoc used the parent hash; a standalone page uses its own address.
   generated = generated.replaceAll('parent.location.hash.slice(1)', 'location.hash.slice(1)');
   if (generated.includes('raw.githack.com/Stevenr105/Steve/master/forst-privat-2026/spiel-luxus-v17.html')) throw new Error('External dependency remained');
-  const scripts = [...generated.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script\\s*>/gi)];
+  const scripts = generated.split('<script>').slice(1).map(s => [null, s.split('</script>')[0]]);
   if (scripts.length < 4) throw new Error('Expected script blocks not found');
   for (const [, source] of scripts) new vm.Script(source);
   const output = path.join(root, 'dist');
