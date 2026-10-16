@@ -94,6 +94,16 @@ if(game.includes('const BASE_URL=')||game.includes('frame.srcdoc='))throw Error(
 // The existing ornamental bag is the sole foreground bag layer.
 const stableStyle='<style id="forst-depth-order">#app>#v23-bag-ornament{z-index:82!important;pointer-events:none!important}#app>.backpackHotspot{z-index:83!important}#veil{z-index:26!important}</style>';
 game=game.replace('</body>',stableStyle+'</body>');
+// Check every inline game script, not just HTML tag counts, before publishing.
+const vm = require('node:vm');
+const inlineScripts=[...game.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
+if(inlineScripts.length!==6)throw Error('Unexpected inline script count: '+inlineScripts.length);
+for(let i=0;i<inlineScripts.length;i++){
+  try{new vm.Script(inlineScripts[i][1],{filename:'forst-inline-'+(i+1)+'.js'});}
+  catch(e){throw Error('Inline JavaScript '+(i+1)+' is invalid: '+e.message)}
+}
+if(!game.includes('v25BagDepthRefinement')||!game.includes('spatialV25Style')||!game.includes('forst-depth-order'))
+  throw Error('Foreground and combat layers missing from final version');
 const out=path.join(dir,'Der_Forst_der_Finsternis_Gesamt_V26.html');
 fs.writeFileSync(out,game,'utf8');
 console.log('Standalone game created:',out,'size',Buffer.byteLength(game,'utf8'),'patches',patches.length,'scripts',opens);
