@@ -1,0 +1,31 @@
+'use strict';
+/* V27: the complete V26 game plus the owner's encrypted story data.
+No older version loaded at runtime; original book remains encrypted in the public repo. */
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const root=__dirname;
+let html=fs.readFileSync(path.join(root,'Der_Forst_der_Finsternis_Gesamt_V26.html'),'utf8');
+const enc=JSON.parse(fs.readFileSync(path.join(root,'forst-buch-v27.enc.json'),'utf8'));
+if(enc.format!=='chacha20-ietf-v1'||enc.section_count!==400)throw Error('Invalid private story package');
+if(!/^[0-9a-f]{24}$/i.test(enc.nonce)||!/^[A-Za-z0-9+/=]{260000,}$/.test(enc.data))throw Error('Encrypted story corrupted');
+const start=html.indexOf('<script id="forst-key-helper">');
+if(start<0)throw Error('Old book-unlock dialog not found');
+const end=html.indexOf('</script>',start);
+if(end<0)throw Error('Old book-unlock dialog has no end');
+html=html.slice(0,start)+html.slice(end+'</script>'.length);
+const addon="\n<script id=\"forst-v27-private-book\">\n(function(){\n\"use strict\";\nconst CIPHER_DATA=__BOOKDATA__,NONCE_HEX=__NONCE__;\nfunction bytes(h){return Uint8Array.from(h.match(/../g)||[],v=>parseInt(v,16))}\nfunction load32(a,i){return (a[i]|a[i+1]<<8|a[i+2]<<16|a[i+3]<<24)>>>0}\nfunction rotate(x,n){return ((x<<n)|(x>>>(32-n)))>>>0}\nfunction qr(w,a,b,c,d){\n w[a]=(w[a]+w[b])>>>0;w[d]=rotate(w[d]^w[a],16);\n w[c]=(w[c]+w[d])>>>0;w[b]=rotate(w[b]^w[c],12);\n w[a]=(w[a]+w[b])>>>0;w[d]=rotate(w[d]^w[a],8);\n w[c]=(w[c]+w[d])>>>0;w[b]=rotate(w[b]^w[c],7);\n}\nfunction block(key,nonce,counter){\n const state=Uint32Array.from([0x61707865,0x3320646e,0x79622d32,0x6b206574,\n  ...Array.from({length:8},(_,i)=>load32(key,i*4)),\n  counter,...Array.from({length:3},(_,i)=>load32(nonce,i*4))]);\n const w=new Uint32Array(state);\n for(let i=0;i<10;i++){\n  qr(w,0,4,8,12);qr(w,1,5,9,13);qr(w,2,6,10,14);qr(w,3,7,11,15);\n  qr(w,0,5,10,15);qr(w,1,6,11,12);qr(w,2,7,8,13);qr(w,3,4,9,14);\n }\n const out=new Uint8Array(64);\n for(let i=0;i<16;i++){\n  const v=(w[i]+state[i])>>>0;\n  for(let j=0;j<4;j++)out[i*4+j]=(v>>>(8*j))&255;\n }\n return out;\n}\nfunction decodeBase64(s){\n const raw=atob(s);const out=new Uint8Array(raw.length);\n for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);\n return out;\n}\nasync function unlockPersonal(){\n const hex=new URLSearchParams(location.hash.slice(1)).get('k')||'';\n if(!/^[0-9a-f]{64}$/i.test(hex))throw Error('Bitte den vollständigen V27-Spiellink verwenden.');\n const key=bytes(hex),nonce=bytes(NONCE_HEX),source=decodeBase64(CIPHER_DATA);\n const output=new Uint8Array(source.length);\n let stream;\n for(let i=0;i<source.length;i++){\n   if(i%64===0)stream=block(key,nonce,(1+(i/64|0))>>>0);\n   output[i]=source[i]^stream[i%64];\n }\n const book=JSON.parse(new TextDecoder().decode(output));\n if(Object.keys(book).length!==400||!book['1']||!book['400'])throw Error('Spielbuchdaten unvollständig.');\n BOOK=book;BOOK_READY=true;BOOK_FAILED='';\n const status=document.getElementById('statusText');\n if(status)status.textContent='400 Abschnitte bereit';\n return true;\n}\nunlockBook=unlockPersonal;\n})();\n</script>".replace('__BOOKDATA__',JSON.stringify(enc.data)).replace('__NONCE__',JSON.stringify(enc.nonce));
+const last=html.lastIndexOf('</body>');
+if(last<0)throw Error('Closing HTML body missing');
+html=html.slice(0,last)+addon+'\n'+html.slice(last);
+html=html.replace('<title>Der Forst der Finsternis — Gesamtfassung V26</title>','<title>Der Forst der Finsternis — Spielbereit V27</title>');
+if(html.includes('id="forst-key-helper"')||html.includes('const BASE_URL=')||html.includes('frame.srcdoc='))throw Error('Old loader or old unlock dialog remains');
+const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
+if(scripts.length!==6)throw Error('Expected six scripts, found '+scripts.length);
+for(const [i,s] of scripts.entries())new vm.Script(s[1],{filename:'spiel-v27-script-'+(i+1)+'.js'});
+if(!html.includes('id="forst-depth-order"')||!html.includes('v25BagDepthRefinement'))throw Error('Visual V25/V26 effects missing');
+if(!html.includes('ENCRYPTED_STORY')||!html.includes('400 Abschnitte bereit'))throw Error('Story integration incomplete');
+const out=path.resolve(root,'../forst-spielbereit/index.html');
+fs.mkdirSync(path.dirname(out),{recursive:true});
+fs.writeFileSync(out,html,'utf8');
+console.log('V27 successfully assembled:',out,Buffer.byteLength(html,'utf8'),'bytes /',scripts.length,'verified scripts');
