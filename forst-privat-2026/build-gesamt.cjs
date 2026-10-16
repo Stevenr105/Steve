@@ -86,6 +86,14 @@ if(opens!==6||closes!==6||!game.startsWith('<!doctype html>'))throw Error('Gener
 if(game.includes('raw.githack.com'))throw Error('External V17 dependency remains');
 if(!game.includes('ENCRYPTED_STORY'))throw Error('Protected book data missing');
 if(!game.includes('v25BagDepthRefinement')||!game.includes('spatialV25Style'))throw Error('V25 visuals missing');
+// QA: reject duplicated embedded images, invalid UTF-8 and old runtime loaders.
+const art=[...game.matchAll(/data:image\/(?:png|webp|jpeg|jpg);base64,[A-Za-z0-9+/=]+/g)].map(m=>m[0]);
+if(art.length<60 || new Set(art).size!==art.length)throw Error('Illustration assets missing or duplicated');
+if(game.includes('\uFFFD'))throw Error('UTF-8 replacement characters found');
+if(game.includes('const BASE_URL=')||game.includes('frame.srcdoc='))throw Error('Dynamic wrapper remains');
+// The existing ornamental bag is the sole foreground bag layer.
+const stableStyle='<style id="forst-depth-order">#app>#v23-bag-ornament{z-index:82!important;pointer-events:none!important}#app>.backpackHotspot{z-index:83!important}#veil{z-index:26!important}</style>';
+game=game.replace('</body>',stableStyle+'</body>');
 const out=path.join(dir,'Der_Forst_der_Finsternis_Gesamt_V26.html');
 fs.writeFileSync(out,game,'utf8');
 console.log('Standalone game created:',out,'size',Buffer.byteLength(game,'utf8'),'patches',patches.length,'scripts',opens);
