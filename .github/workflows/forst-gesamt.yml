@@ -20,6 +20,12 @@ jobs:
           node-version: '22'
       - name: Build one complete HTML
         run: node forst-privat-2026/build-gesamt.cjs
+      - name: Upload standalone HTML for offline QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: forst-v26-game-qa
+          path: forst-final/index.html
+          retention-days: 1
       - name: Save assembled standalone file
         shell: bash
         run: |
