@@ -7,8 +7,9 @@ let html=fs.readFileSync(src,'utf8');
 if(html.length<5800000||!html.includes('id="v24-goldskin"')||!html.includes('backpackHotspot'))throw Error('Standalone V24 invalid');
 const additions=String.raw`<style id="v25-bag-and-attack">
 /* Reuse identical existing background artwork for the bag; raise only its own visual region. */
-#forstBagForeground{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:56;pointer-events:none;user-select:none;-webkit-user-drag:none;clip-path:inset(77% 0 0 76%);-webkit-mask-image:radial-gradient(ellipse 12% 14% at 91% 93%,#000 49%,#000e 67%,transparent 96%);mask-image:radial-gradient(ellipse 12% 14% at 91% 93%,#000 49%,#000e 67%,transparent 96%)}
-#app>.backpackHotspot{z-index:57!important;pointer-events:auto!important}
+#v23-bag-ornament{display:none!important}
+#forstBagForeground{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:70;pointer-events:none;user-select:none;-webkit-user-drag:none;clip-path:inset(77% 0 0 76%);-webkit-mask-image:radial-gradient(ellipse 12% 14% at 91% 93%,#000 49%,#000e 67%,transparent 96%);mask-image:radial-gradient(ellipse 12% 14% at 91% 93%,#000 49%,#000e 67%,transparent 96%)}
+#app>.backpackHotspot{z-index:71!important;pointer-events:auto!important}
 /* An enemy cut from its own existing illustration reaches out over the parchment. */
 #forstBattleCharge{position:absolute;z-index:54;pointer-events:none;display:none;object-fit:cover;object-position:center 43%;user-select:none;-webkit-user-drag:none;-webkit-mask-image:radial-gradient(ellipse 43% 45% at 50% 47%,#000 46%,#000e 64%,transparent 100%);mask-image:radial-gradient(ellipse 43% 45% at 50% 47%,#000 46%,#000e 64%,transparent 100%);filter:drop-shadow(0 12px 11px #0009);transform-origin:center 36%}
 #forstBattleCharge.is-boar{object-position:center 50%}
