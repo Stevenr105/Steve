@@ -57,6 +57,18 @@ for(const code of [addOns[0],v23,addOns[1],addOns[2]+refinement]){
   game=game.replace('</body>',code+'</body>');
 }
 game=game.replace('<title>Der Forst der Finsternis — Luxus V17</title>','<title>Der Forst der Finsternis — Gesamtfassung V26</title>');
+
+/* User-provided book: 400 sections remain AES-GCM encrypted in GitHub. */
+const privateBook=JSON.parse(fs.readFileSync(path.join(dir,'geschuetzte-buchdaten-v27.json'),'utf8'));
+if(privateBook.format!=='forst-private-v1'||privateBook.sectionCount!==400||!/^[A-Za-z0-9+/=]+$/.test(privateBook.ciphertext))
+  throw Error('Encrypted book package missing or damaged');
+const cipherAnchor=/const ENCRYPTED_STORY = '[A-Za-z0-9+/=]+';/;
+const nonceAnchor=/const STORY_NONCE = '[A-Za-z0-9+/=]+';/;
+if(!cipherAnchor.test(game)||!nonceAnchor.test(game))throw Error('Gamebook encryption anchors missing');
+game=game.replace(cipherAnchor,"const ENCRYPTED_STORY = '"+privateBook.ciphertext+"';");
+game=game.replace(nonceAnchor,"const STORY_NONCE = '"+privateBook.nonce+"';");
+if(!game.includes(privateBook.ciphertext))throw Error('Encrypted private book was not installed');
+
 // When an old Safari URL with #k=... is used, the encrypted book opens exactly as before.
 // No plaintext book is exposed in the public repository.
 const unlockHelp=String.raw`
@@ -106,4 +118,8 @@ if(!game.includes('v25BagDepthRefinement')||!game.includes('spatialV25Style')||!
   throw Error('Foreground and combat layers missing from final version');
 const out=path.join(dir,'Der_Forst_der_Finsternis_Gesamt_V26.html');
 fs.writeFileSync(out,game,'utf8');
+const liveDir=path.join(dir,'..','forst-final');
+fs.mkdirSync(liveDir,{recursive:true});
+fs.writeFileSync(path.join(liveDir,'index.html'),game,'utf8');
+
 console.log('Standalone game created:',out,'size',Buffer.byteLength(game,'utf8'),'patches',patches.length,'scripts',opens);
