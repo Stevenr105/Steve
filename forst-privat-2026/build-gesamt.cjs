@@ -59,7 +59,7 @@ for(const code of [addOns[0],v23,addOns[1],addOns[2]+refinement]){
 game=game.replace('<title>Der Forst der Finsternis — Luxus V17</title>','<title>Der Forst der Finsternis — Gesamtfassung V26</title>');
 // When an old Safari URL with #k=... is used, the encrypted book opens exactly as before.
 // No plaintext book is exposed in the public repository.
-const unlockHelp=String.raw\`
+const unlockHelp=String.raw`
 <script id="forst-key-helper">
 (function(){
  if(/^[0-9a-f]{64}$/i.test(new URLSearchParams(location.hash.slice(1)).get('k')||''))return;
@@ -79,7 +79,7 @@ const unlockHelp=String.raw\`
  if(document.readyState==='complete')show();
  else window.addEventListener('load',show,{once:true});
 })();
-</script>\`;
+</script>`;
 game=game.replace('</body>',unlockHelp+'</body>');
 const opens=(game.match(/<script\b/gi)||[]).length,closes=(game.match(/<\/script>/gi)||[]).length;
 if(opens!==6||closes!==6||!game.startsWith('<!doctype html>'))throw Error('Generated HTML validation failed: '+opens+'/'+closes);
