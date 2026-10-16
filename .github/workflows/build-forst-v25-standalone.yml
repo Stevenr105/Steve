@@ -1,0 +1,30 @@
+name: Build Forst V25 Standalone
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'forst-privat-2026/build-v25-standalone.cjs'
+      - '.github/workflows/build-forst-v25-standalone.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout game
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Build V25 from standalone V24
+        run: node forst-privat-2026/build-v25-standalone.cjs
+      - name: Commit V25 game
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add forst-privat-2026/spiel-luxus-v25-eigenstaendig.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Build Forst V25 standalone with foreground bag and combat attack"
+            git push
+          fi
