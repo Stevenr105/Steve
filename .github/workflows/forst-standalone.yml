@@ -1,0 +1,31 @@
+name: Build standalone Forst der Finsternis
+on:
+  push:
+    paths:
+      - .github/workflows/forst-standalone.yml
+      - forst-privat-2026/build-standalone.cjs
+      - forst-privat-2026/spiel-luxus-v25-final.html
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Generate complete one-file game
+        run: node forst-privat-2026/build-standalone.cjs
+      - name: Commit standalone HTML
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f forst-privat-2026/dist/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Build standalone Forst v25 HTML"
+            git push
+          fi
