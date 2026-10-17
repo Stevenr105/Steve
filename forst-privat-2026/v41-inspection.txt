@@ -1,0 +1,404 @@
+Source length: 6793267
+Scripts 0: 4326375 <script>
+// Forst der Finsternis — private browser client.
+c | 1: 445816 <script>
+/* V21: scene-only picture, immersive parchment and | 2: 47877 <script>
+/* V23: real in-game menus, not a decorative bitmap | 3: 3630 <script id="forst-v29-rolls">(()=>{
+'use strict';
+// Three b | 4: 950582 <script id="forst-one-controller">const FORST_VISUALS={"fram | 5: 5044 <script id="forst-v38-top-tools">(()=>{
+ 'use strict';
+ cons
+Styles 0: 55498 <style>
+:root{--gold:#ddb873;--paper:#efe0bc;--ink:#2a1b10;- | 1: 662 <style>
+/* V21: the ornate front frame stays on top while th | 2: 37237 <style id="forst-one-stage">/* ONE visible game surface, old
+Controller length: 950582
+StageCSS length: 37237
+----- renderPanel matches 0 -----
+----- openPanel matches 0 -----
+----- paintCombat matches 1 -----
+POS 939600 important');btn.querySelectorAll('img.choiceArt,.choiceArrow').forEach(e=>e.remove());btn.dataset.fsPainted='1';
+ });
+}
+function paintCombat(){
+ if(visiblePanel!=='combat'||!state.combat)return;
+ const area=veil.querySelector('#sheetBody');if(!area)return;
+ const existing=[...area.querySelectorAll('button.engraved')];
+ const primary=existing.find(b=>/battleRound\(|combatLuck\(|endFight\(|startSetup\(/.test(b.getAttribute('onclick')||''));
+ if(!primary)return;
+ const retreat=existing.find(b=>/tryFlee\(|skipCombatLuck\(/.test(b.getAttribute('onclick')||''));
+ const grid=document.createElement('div');grid.className='fs-combat-grid';
+ const attach=(btn,image,title)=>{
+  btn.classList.add('fs-fight-card');
+  btn.textContent=title;
+  btn.style.setProperty('background','linear-gradient(180deg,transparent 5%,rgba(0,15,10,.15) 31%,rgba(0,17,12,.96) 100%),url("'+image+'") center/cover no-repeat','important');
+  btn.style.setProperty('background-size','100% 100%,auto 145%','important');btn.style.setProperty('background-position','center,center top','important');
+  grid.appendChild(btn);
+ };
+ let actionText='Angreifen';
+ if(/combatLuck/.test(primary.getAttribute('onclick')||''))actionText='Glück versuchen';
+ if(/endFight/.test(primary.getAttribute('onclick')||''))actionText='Weiter';
+ if(/startSetup/.test(primary.getAttribute('onclick')||''))actionText='Neustart';
+ attach(primary,FORST_VISUALS.choiceAttack,actionText);
+ if(retreat)attach(retreat,FORST_VISUALS.choiceDodge,/tryFlee/.test(retreat.getAttribute('onclick')||'')?'Ausweichen / Flucht':'Ohne Glück');
+ else{const values=document.createElement('button');values.type='button';values.onclick=()=>openPanel('stats');attach(values,FORST_VISUALS.choiceDodge,'Werte');}
+ const inventory=document.createElement('button');inventory.type='button';inventory.onclick=()=>openPanel('pack');attach(inventory,FORST_VISUALS.choiceInventory,'Inventar');
+ area.appendChild(grid);
+area.querySelectorAll('.combatActions:empty,.choices:empty').forEach(el=>el.remove());
+ area.querySelectorAll('.combatActions:empty,.choices:empty').forEach(el=>el.remove());
+}
+const observedArea=veil.querySelector('#sheetBody');
+if(observedArea){
+ const watch=new MutationObserver(()=>{
+  if(visiblePanel==='combat'&&state.combat&&!observedArea.querySelector('.fs-combat-grid'))paintCombat();
+  else if(visiblePanel==='story'&&observedArea.querySelector('.storyChoice:not([data-fs-painted])'))paintChoices();
+ });
+ watch.observe(observedArea,{childList:true,subtree:false});
+}
+// Expanded trophies use the same parchment/card language as the game interface.
+const originalCreatureCard=creatureCardHTML;
+creatureCardHTML=function(c,expanded=false){
+ if(!expanded)return originalCreatureCard(c,expanded);
+ const name=escapeHTML(c.name||'Gegner');
+ const isBoar=/wildschwein|eber|keiler/i.test(c.name||'');
+ const portrait=isBoar?FORST_VISUALS.boar:cardArt(c);
+ const strength=Number(c.hp)||0, danger=Number(c.fear)||0;
+ const gems=n=>[1,2,3,4,5].map(i=>i<=Math.round(Math.min(15,n)/3)?'<b>◆</b>':'<i>◇</i>').join('');
+ const habitat=isBoar?'Wälder, Lichtungen und ruhige Wasserstellen.':'Fundort und Verhalten ergeben sich aus deinem Abenteuer.';
+ return `<article class="fs-bestiary" aria-label="Sammelkarte ${name}">
+  <div class="fs-bestiary-image"><img src="${portrait}" alt="${name}"></div>
+  <h2>${name}</h2><div class="fs-bestiary-divider">──── ✥ ────</div>
+  <p class="fs-bestiary-desc">${isBoar?'Ein wildes, wehrhaftes Tier mit kräftigen Hauern.':`Ein Wesen aus deinem Abenteuer im Forst der Finsternis.`} Die Angaben dieser Sammelkarte dienen dem Bestiarium.</p>
+  <div class="fs-bestiary-grid"><div><span class="fs-symbol">⚔</span><strong>Stärke</strong><span class="fs-gems">${gems(strength)}</span></div>
+  <div><span class="fs-symbol">☠</span><strong>Gefahr</strong><span class="fs-gems">${gems(danger)}</span></div>
+  <div><span class="fs-symbol">♧</span><strong>Beute</strong><span class="fs-bestiary-small">Nur laut Buch</span></div></div>
+  <div class="fs-bestiary-habitat"><span>♧</span><div><b>Lebensraum</b><p>${habitat}</p></div></div>
+  <small class="fs-bestiary-foot">${c.section?'Gesehen in Abschnitt '+Number(c.section):'Sonderkarte'} · Gewandtheit ${Number(c.g)||'–'} · Lebenspunkte ${strength}</small>
+  </article>`;
+};
+const oldRender=renderPanel;
+renderPanel=function(){const ret=oldRender.apply(this,arguments);sync();return ret};
+const oldScene=showMainScene;
+showMainScene=function(){const ret=oldScene.apply(this,arguments);setArt();return ret};
+// All buttons call the original book engine; they are not decorative hot spots.
+const send=(n)=>{if(typeof openPanel==='function')openPanel(n)};
+document.getElementById('fs-trophy').onclick=()=>send('trophies');
+document.getElementById('fs-values').onclick=()=>send('stats');
+document.getElementById('fs-journal').onclick=()=>send('log');
+document.getElementById('fs-bag').onclick=()=>send('pack');
+function zoom(){document.getElementById('fs-fullscreen-img').src=visiblePanel==='combat'?foeImage.src:img.src;document.getElementById('fs-fullscreen').classList.add('open')}
+function closeZoom(){document.getElementById('fs-fullscreen').classList.remove('open')}
+document.getElementById('fs-banner').onclick=zoom;
+document.getElementById('fs-imgbtn').onclick=zoom;
+document.getElementById('fs-close-image').onclick=closeZoom;
+document.getElementById('fs-fullscreen').addEventListener('click',e=>{if(e.target.id==='fs-fullscreen')closeZoom()});
+document.getElementById('fs-banner').addEventListener('keydown',e=>{if(e.key==='Enter')zoom()});
+
+// V40 works inside the existing visual controller. The engine and saves are unchanged.
+const opt=document.createElement('button');opt.type='button';opt.id='fs-options';opt.textContent='OPTIONEN';opt.setAttribute('aria-label','Optionen im Steinturm');opt.onclick=()=>openPanel('options');document.getElementById('fs-nav').appendChild(opt);
+for(let i=0;i<5;i++){const leaf=document.createElement('i');leaf.className='fs-leaf';leaf.style.left=(18+i*15)+'%';leaf.style.setProperty('--dur',(17+i*4)+'s');leaf.style.setProperty('--delay',(-i*6)+'s');leaf.style.setProperty('--drift',((i%2?-1:1)*(38+i*14))+'px');leaf.setAttribute('aria-hidden','true');stage.appendChild(leaf);}
+const fullCard=document.createElement('section');fullCard.className='fs-card-modal';fullCard.hidden=true;fullCard.setAttribute('role','dialog');fullCard.setAttribute('aria-label','Vollständige Sammelkarte');fullCard.innerHTML='<button class="fs-card-close" type="button" aria-label="Karte schließen">×</button><div class="fs-card-inner"></div>';stage.appendChild(fullCard);
+const closeFullCard
+----- setArt matches 1 -----
+POS 935643 .style.setProperty('--fs-frame',`url("${FORST_VISUALS.frame}")`);
+document.getElementById('fs-body').appendChild(veil);
+function setArt(){
+ const pic=old?.querySelector('img');
+ const k=old?.dataset.scene||'forest_path';
+ const val=pic?.getAttribute('src')||SCENE_ART[k]||SCENE_ART.forest_path;
+ if(img.src!==val)img.src=val;
+ const combat=visiblePanel==='combat';
+ if(combat){
+ const name=String(state.combat?.name||'').toLowerCase();
+ let src;
+ if(/wildschwein|eber|keiler/.test(name))src=FORST_VISUALS.boar;
+ else{
+  const keys=Object.keys(SCENE_ART||{});
+  const q=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const match=keys.find(x=>x.toLowerCase().replace(/_/g,' ').includes(q))||keys.find(x=>q.split(' ')[0]&&x.toLowerCase().includes(q.split(' ')[0]));
+  src=SCENE_ART[match]||SCENE_ART[typeof cardArtKey==='function'?cardArtKey(name):'']||val;
+ }
+ foeImage.src=src;
+ foeImage.alt=name||'Gegner';
+ }
+}
+function sync(){
+ if(!stage.isConnected)return;
+ stage.classList.remove('fs-home','fs-story','fs-combat','fs-setup');
+ stage.classList.add('fs-'+visiblePanel);
+ const fsPanelTitles={diceSelect:'Die Würfelkammer',options:'Optionen',stats:'Deine Werte',trophies:'Halle der Erinnerungen'};
+ if(Object.prototype.hasOwnProperty.call(fsPanelTitles,visiblePanel)){
+  const caption=document.getElementById('sheetTitle');if(caption)caption.textContent=fsPanelTitles[visiblePanel];
+ }
+ if(visiblePanel==='stats'){
+  veil.querySelectorAll('button.minibtn[onclick^="changeStat("]').forEach(btn=>{
+   const match=(btn.getAttribute('onclick')||'').match(/changeStat\('([gsl])',\s*(-?1)\)/);
+   if(!match)return;
+   const name={g:'Gewandtheit',s:'Stärke',l:'Glück'}[match[1]];
+   const verb=match[2]==='1'?'erhöhen':'verringern';
+   btn.setAttribute('aria-label',name+' '+verb);btn.setAttribute('title',name+' '+verb);
+  });
+ }
+
+ // Refuse accidental rendering of a second window or satchel.
+ app.querySelectorAll('#skin-frame,#skin-satchel,#skin-ui-title,#skin-ui-stats,#skin-creature-lunge,#v23-bag-ornament').forEach(n=>n.remove());
+ if(visiblePanel==='story'){
+ const chapter=veil.querySelector('.storyText');
+ if(chapter){
+   const raw=chapter.textContent||'';
+   const sentinel='\uE000';
+   chapter.textContent=raw.replace(/\r/g,'').replace(/\n[ \t]*\n+/g,sentinel).replace(/[ \t]*\n[ \t]*/g,' ').replaceAll(sentinel,'\n\n').replace(/[ \t]{2,}/g,' ');
+ }
+ const header=veil.querySelector('.parchment h2');
+ if(header)document.getElementById('sheetTitle').textContent=header.textContent;
+ if(header)header.style.display='none';
+ }
+ if(visiblePanel==='combat'){
+ const bt=veil.querySelector('.battleTitle');
+ i
+----- camp matches 3 -----
+POS 949029 {ctx,source};}catch(e){crackleOn=false;}
+}
+function v40Polish(){
+ const area=veil.querySelector('#sheetBody');if(!area)return;
+ if(visiblePanel==='inventory')v40Inventory();
+ if(visiblePanel==='camp'){
+  area.querySelectorAll('.artScene.large').forEach(el=>el.remove());
+  if(!area.querySelector('.fs-camp-scene')){const fire=document.createElement('div');fire.className='fs-camp-scene';fire.setAttribute('role','img');fire.setAttribute('aria-label','Kleines knisterndes Lagerfeuer im Wald');fire.innerHTML='<div class="fs-fire"><span class="fs-flame"></span><span class="fs-flame"></span><span class="fs-flame"></span></div><div class="fs-logs"></div>';area.prepend(fir
+POS 949137 );if(!area)return;
+ if(visiblePanel==='inventory')v40Inventory();
+ if(visiblePanel==='camp'){
+  area.querySelectorAll('.artScene.large').forEach(el=>el.remove());
+  if(!area.querySelector('.fs-camp-scene')){const fire=document.createElement('div');fire.className='fs-camp-scene';fire.setAttribute('role','img');fire.setAttribute('aria-label','Kleines knisterndes Lagerfeuer im Wald');fire.innerHTML='<div class="fs-fire"><span class="fs-flame"></span><span class="fs-flame"></span><span class="fs-flame"></span></div><div class="fs-logs"></div>';area.prepend(fire);const btn=document.createElement('button');btn.className='fs-fire-audio';btn.type='button';btn.textConten
+POS 949211 blePanel==='camp'){
+  area.querySelectorAll('.artScene.large').forEach(el=>el.remove());
+  if(!area.querySelector('.fs-camp-scene')){const fire=document.createElement('div');fire.className='fs-camp-scene';fire.setAttribute('role','img');fire.setAttribute('aria-label','Kleines knisterndes Lagerfeuer im Wald');fire.innerHTML='<div class="fs-fire"><span class="fs-flame"></span><span class="fs-flame"></span><span class="fs-flame"></span></div><div class="fs-logs"></div>';area.prepend(fire);const btn=document.createElement('button');btn.className='fs-fire-audio';btn.type='button';btn.textContent='♫ Feuerknistern einschalten';btn.onclick=()=>{v40FireAudio(!crackleOn);
+----- options matches 1 -----
+POS 949578 e"></span><span class="fs-flame"></span><span class="fs-flame"></span></div><div class="fs-logs"></div>';area.prepend(fire);const btn=document.createElement('button');btn.className='fs-fire-audio';btn.type='button';btn.textContent='♫ Feuerknistern einschalten';btn.onclick=()=>{v40FireAudio(!crackleOn);btn.textContent=crackleOn?'🔊 Feuerknistern ausschalten':'♫ Feuerknistern einschalten'};fire.after(btn);}
+ }else if(crackleOn)v40FireAudio(false);
+ if(visiblePanel==='cardDetail'){
+  const card=area.querySelector('.fs-bestiary');if(card){const art=card.querySelector('.fs-bestiary-image');if(art&&!art.dataset.v40){art.dataset.v40='1';art.tabIndex=0;art.setAttribute('role','button');art.setAttribute('aria-label','Ganze Sammelkarte vergrößern');const go=()=>{fullCard.querySelector('.fs-card-inner').replaceChildren(card.cloneNode(true)
+----- dice matches 1 -----
+POS 936626 ==='function'?cardArtKey(name):'']||val;
+ }
+ foeImage.src=src;
+ foeImage.alt=name||'Gegner';
+ }
+}
+function sync(){
+ if(!stage.isConnected)return;
+ stage.classList.remove('fs-home','fs-story','fs-combat','fs-setup');
+ stage.classList.add('fs-'+visiblePanel);
+ const fsPanelTitles={diceSelect:'Die Würfelkammer',options:'Optionen',stats:'Deine Werte',trophies:'Halle der Erinnerungen'};
+ if(Object.prototype.hasOwnProperty.call(fsPanelTitles,visiblePanel)){
+  const caption=document.getElementById('sheetTitle');if(caption)caption.textContent=fsPanelTitles[visiblePanel];
+ }
+ if(visiblePanel==='stats'){
+  veil.querySelectorAll('button.minibtn[onclick^="changeStat("]').forEach(btn=>{
+   const match=(btn.getAttribute('onclick')||'').match(/changeStat\('([gsl])',\s*(-?1)\)/);
+   if(!match)return;
+   const name={g:'Gewandtheit',s:'Stärke',l:'Glück'}[match[1]];
+   const verb=match[2]==='1'?'erhöhen':'verringern';
+   btn.setAttribute('aria-label',name+' '+verb);btn.setAttribute('title',name+' '+verb);
+  });
+ }
+
+ // Refuse accidental rendering of a second window or satchel.
+ app.querySelectorAll('#skin-frame,#skin-satchel,#skin-ui-title,#skin-ui-stats,#skin-creature-lunge,#v23-bag-ornament').forEach(n=>n.remove());
+ if(visiblePanel==='story'){
+ const chapter=veil.querySelector('.storyText');
+ if(chapter){
+   const raw=chapter.textContent||'';
+   const sentinel='\uE000';
+   chapter.textContent=raw.replace(/\r/g,'').replace(/\n[ \t]*\n+/g,sentinel).replace(/[ \t]*\n[ \t]*/g,' ').replaceAll(sentinel,'\n\n').replace(/[ \t]{2,}/g,' ');
+ }
+ const header=veil.querySelector('.p
+----- enemy image matches 3 -----
+POS 60128 fnIYj7vrORZ4tpePhD1p+r3Z4pgYgOScMIQPWmPp+RymzkSYV2IA2X/DSrQ+IbEYwzYrOtrn9SaPN1zQo7tgNgiE527jQ0G/j+2qxI97BYwoC+rEjPAArW/29LdwuzSrUp942oF8Njmyy+YzVUmk+WWm2swSfcZ9vWDkSF3a6WphePFr8DXpGACLwbL/kEzc8EHbfwLifBEQRb3vMNYbCM6fYOzvENEM8RPOrghtB35Q4Fw6JgTpVJ8wzcJV1/CFWCCV28kQ2xEo9VluWqCkn9AqtfUffGPsldrwIzmzQnN8n0lx0tLyGsd/X717z+oHVC3Lx6F6rm+t8gHZLPmETQvZNMEFdxZQ2S0zDMMdtq+LW9WqYrmRCtVOObzjAnGs6OjnoEciofaLIIpFMgYTSu/LaCgzLCH0kwbQhMN9sicipSdRJO4t4FsQXCPalWlMNuFi0nh95TGpiQ/c10q/BPiZIsopLSRzEQfEsbQ/WcV5n3aQpjikr6Ysj0Fwh0fJsuaIGADY/46rWk4/Pe0i/SneiBizFu+7b6cD02yogZlOUv8Fl+48hXGDAi/smrLCSQZu43XenOykJAfDG9KlfX0fxx7aU5zsdinH5u1sPlx/+vZ8N0pPMWhMH8pCGrDShOkwpVdZ4dhiJc9OYOGUMg+MZxBcJ61o7nTO0QSTSd/ZNK4Q2ikVlNUXB6jKuPa9FxPOEsCIX4bLLEmSKmhWx6UoXJhI9zBkzZ9uF6TQob3Q4U2BbDU6J1x5sHlReTqkbfpLZoKsOAlx/A5ji36eyG8YR6wFAK8cQnyDyJAt/wXkF47U5BSq
+POS 934760 nt.getElementById('dynamicScene');
+stage.innerHTML=`<div id="fs-banner" role="button" tabindex="0" aria-label="Szenenbild vergrößern"><img id="fs-banner-img" alt="Abenteuerillustration"></div><div id="fs-beast"><img id="fs-beast-img" alt="Gegner"></div><button id="fs-imgbtn" title="Bild vergrößern"><span>⛶</span>Bild</button><div id="fs-body"></div><div id="fs-nav"><button id="fs-trophy" title="Trophäen öffnen">Trophäen</button><button id="fs-values" title="Werte öffnen">Werte</button><button id="fs-journal" title="Tagebuch"><strong>▤</strong>Tagebuch</button><button id="fs-bag" aria-label="Inventar öffnen" title="Inventar öffnen">Inventar</button></div><div id="fs-fullscreen" role="dialog" aria-label="Illustration in Großansicht"><button id="fs-close-image">✕ Schließen</button><img id="fs-fullscreen-img" alt
+POS 935502 button id="fs-close-image">✕ Schließen</button><img id="fs-fullscreen-img" alt="Illustration in groß"></div>`;
+app.appendChild(stage);
+const img=document.getElementById('fs-banner-img'),foeImage=document.getElementById('fs-beast-img');
+stage.style.setProperty('--fs-frame',`url("${FORST_VISUALS.frame}")`);
+document.getElementById('fs-body').appendChild(veil);
+function setArt(){
+ const pic=old?.querySelector('img');
+ const k=old?.dataset.scene||'forest_path';
+ const val=pic?.getAttribute('src')||SCENE_ART[k]||SCENE_ART.forest_path;
+ if(img.src!==val)img.src=val;
+ const combat=visiblePanel==='combat';
+ if(combat){
+ const name=String(state.combat?.name||'').toLowerCase();
+ let src;
+ if(/wildschwein|eber|keiler/.test(name))src=FORST_VISUALS.boar;
+ else{
+  const keys=Object.keys(SCENE_ART||{});
+  const q=name.norma
+----- inventory matches 5 -----
+POS 946381 ===fullCard)closeFullCard();};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeFullCard()});
+let invSort='found',crackle=null,crackleOn=false;
+function v40Inventory(){
+ const area=veil.querySelector('#sheetBody'),grid=area?.querySelector('.v23-item-grid');if(!grid)return;
+ grid.querySelectorAll('.v23-item').forEach((button,i)=>{
+  const it=state.items?.[i];if(!it)return;
+  button.dataset.idx=i;button.dataset.name=String(it.name||'').toLowerCase();button.dataset.kind=String(it.kind||'').toLowerCase();button.setAttribute('aria-label',it.name+' ansehen');
+  const picture=productArt(it.name);
+  if(picture){button.classList.add('fs-pictured');if(!button.querySelector('img.fs-item-picture')){const img=document.createElement('img');img.className='fs-item-picture';img.alt='';img.src=picture;button.prepend(img);}}
+  else button.classList.remove('fs-pictured');
+ });
+ let nav=grid.parentElement.querySelector('.fs-inv-sort');
+ if(!nav){nav=document.createElement('nav');nav.className='fs-inv-sort';nav.setAttribute('aria-label','Inventar sortieren');nav.innerHTML='<button type="button" data-sort="found">Gefunden</button><button type="butto
+POS 946478 ullCard()});
+let invSort='found',crackle=null,crackleOn=false;
+function v40Inventory(){
+ const area=veil.querySelector('#sheetBody'),grid=area?.querySelector('.v23-item-grid');if(!grid)return;
+ grid.querySelectorAll('.v23-item').forEach((button,i)=>{
+  const it=state.items?.[i];if(!it)return;
+  button.dataset.idx=i;button.dataset.name=String(it.name||'').toLowerCase();button.dataset.kind=String(it.kind||'').toLowerCase();button.setAttribute('aria-label',it.name+' ansehen');
+  const picture=productArt(it.name);
+  if(picture){button.classList.add('fs-pictured');if(!button.querySelector('img.fs-item-picture')){const img=document.createElement('img');img.className='fs-item-picture';img.alt='';img.src=picture;button.prepend(img);}}
+  else button.classList.remove('fs-pictured');
+ });
+ let nav=grid.parentElement.querySelector('.fs-inv-sort');
+ if(!nav){nav=document.createElement('nav');nav.className='fs-inv-sort';nav.setAttribute('aria-label','Inventar sortieren');nav.innerHTML='<button type="button" data-sort="found">Gefunden</button><button type="button" data-sort="name">Name</button><button type="button" data-sort="kind">Art</button>';grid.parent
+POS 946536 lse;
+function v40Inventory(){
+ const area=veil.querySelector('#sheetBody'),grid=area?.querySelector('.v23-item-grid');if(!grid)return;
+ grid.querySelectorAll('.v23-item').forEach((button,i)=>{
+  const it=state.items?.[i];if(!it)return;
+  button.dataset.idx=i;button.dataset.name=String(it.name||'').toLowerCase();button.dataset.kind=String(it.kind||'').toLowerCase();button.setAttribute('aria-label',it.name+' ansehen');
+  const picture=productArt(it.name);
+  if(picture){button.classList.add('fs-pictured');if(!button.querySelector('img.fs-item-picture')){const img=document.createElement('img');img.className='fs-item-picture';img.alt='';img.src=picture;button.prepend(img);}}
+  else button.classList.remove('fs-pictured');
+ });
+ let nav=grid.parentElement.querySelector('.fs-inv-sort');
+ if(!nav){nav=document.createElement('nav');nav.className='fs-inv-sort';nav.setAttribute('aria-label','Inventar sortieren');nav.innerHTML='<button type="button" data-sort="found">Gefunden</button><button type="button" data-sort="name">Name</button><button type="button" data-sort="kind">Art</button>';grid.parentElement.insertBefore(nav,grid);
+ nav.onclick=e=>{const btn
+POS 947665 id);
+ nav.onclick=e=>{const btn=e.target.closest('[data-sort]');if(btn){invSort=btn.dataset.sort;v40InventorySort(grid,nav);}};}
+ v40InventorySort(grid,nav);
+}
+function v40InventorySort(grid,nav){const key=invSort==='name'?'name':invSort==='kind'?'kind':'idx';const buttons=[...grid.querySelectorAll('.v23-item')];buttons.sort((a,b)=>key==='idx'?Number(a.dataset.idx)-Number(b.dataset.idx):String(a.dataset[key]).localeCompare(String(b.dataset[key]),'de'));buttons.forEach(b=>grid.appendChild(b));nav.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sort===invSort)));}
+function v40FireAudio(on){
+ crackleOn=on;if(!on){if(crackle){try{crackle.source.stop();crackle.ctx.close();}catch(e){}crackle=null;}return;}
+ try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const ctx=new C(),buffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=((Math.random()*2-1)*.12+((Math.random()<.0006)?(Math.random()-.5)*.8:0));const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();source.buffer=buffer;source.l
+POS 947807 Sort(grid,nav);
+}
+function v40InventorySort(grid,nav){const key=invSort==='name'?'name':invSort==='kind'?'kind':'idx';const buttons=[...grid.querySelectorAll('.v23-item')];buttons.sort((a,b)=>key==='idx'?Number(a.dataset.idx)-Number(b.dataset.idx):String(a.dataset[key]).localeCompare(String(b.dataset[key]),'de'));buttons.forEach(b=>grid.appendChild(b));nav.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sort===invSort)));}
+function v40FireAudio(on){
+ crackleOn=on;if(!on){if(crackle){try{crackle.source.stop();crackle.ctx.close();}catch(e){}crackle=null;}return;}
+ try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const ctx=new C(),buffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=((Math.random()*2-1)*.12+((Math.random()<.0006)?(Math.random()-.5)*.8:0));const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();source.buffer=buffer;source.loop=true;filter.type='lowpass';filter.frequency.value=650;gain.gain.value=.4;source.connect(filter);filter.connect(gain);gain.connect(ctx.dest
+----- handlers matches 3 -----
+POS 948111 ataset.idx)-Number(b.dataset.idx):String(a.dataset[key]).localeCompare(String(b.dataset[key]),'de'));buttons.forEach(b=>grid.appendChild(b));nav.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sort===invSort)));}
+function v40FireAudio(on){
+ crackleOn=on;if(!on){if(crackle){try{crackle.source.stop();crackle.ctx.close();}catch(e){}crackle=null;}return;}
+ try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const ctx=new C(),buffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=((Math.random()*2-1)*.12+((Math.random()<.0006)?(Math.random()-.5)*.8:0));const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();source.buffer=buffer;source.loop=true;filter.type='lowpass';filter.frequency.value=650;gain.gain.value=.4;source.connect(filter);filter.connect(gain);gain.connect(ctx.destination);source.start();crackle={ctx,source};}catch(e){crackleOn=false;}
+}
+function v40Polish(){
+ const area=veil.querySelector('#sheetBody');if(!area)return;
+ if(visiblePanel==='inventory')v40Inventory();
+ if(visiblePanel==='camp'){
+  area.querySelectorAll('.artScene.large').forEach(el=>el.remove());
+  if(!area.querySelector('.fs-camp-scene')){const fire=document.createElement('div');fire.className='fs-camp-scene';fire.setAttribute('role','img');fire.setAttribute('aria-label','Kleines knisterndes Lagerfeuer im Wald');fire.innerHTML='<div class="fs-fire"><span class="fs-flame"></span><span class="fs-flame"></span><span class="fs-flame"></span></div><div class="fs-logs"></div>';area.prepend(fire);const btn=document.createElement('button');btn.className='fs-fire-audio';btn.type='button';btn.textContent='♫ Feuerknistern einschalten';btn.onclick=()=>{v40FireAudio(!crackleOn);btn.textContent=crackleOn?'🔊 Feuerknistern ausschalten':'♫ Feuerknistern einschalten'};fire.after(btn);}
+ }else if(crac
+POS 948882 n();source.buffer=buffer;source.loop=true;filter.type='lowpass';filter.frequency.value=650;gain.gain.value=.4;source.connect(filter);filter.connect(gain);gain.connect(ctx.destination);source.start();crackle={ctx,source};}catch(e){crackleOn=false;}
+}
+function v40Polish(){
+ const area=veil.querySelector('#sheetBody');if(!area)return;
+ if(visiblePanel==='inventory')v40Inventory();
+ if(visiblePanel==='camp'){
+  area.querySelectorAll('.artScene.large').forEach(el=>el.remove());
+  if(!area.querySelector('.fs-camp-scene')){const fire=document.createElement('div');fire.className='fs-camp-scene';fire.setAttribute('role','img');fire.setAttribute('aria-label','Kleines knisterndes Lagerfeuer im Wald');fire.innerHTML='<div class="fs-fire"><span class="fs-flame"></span><span class="fs-flame"></span><span class="fs-flame"></span></div><div class="fs-logs"></div>';area.prepend(fire);const btn=document.createElement('button');btn.className='fs-fire-audio';btn.type='button';btn.textContent='♫ Feuerknistern einschalten';btn.onclick=()=>{v40FireAudio(!crackleOn);btn.textContent=crackleOn?'🔊 Feuerknistern ausschalten':'♫ Feuerknistern einschalten'};fire.after(btn);}
+ }else if(crackleOn)v40FireAudio(false);
+ if(visiblePanel==='cardDetail'){
+  const card=area.querySelector('.fs-bestiary');if(card){const art=card.querySelector('.fs-bestiary-image');if(art&&!art.dataset.v40){art.dataset.v40='1';art.tabIndex=0;art.setAttribute('role','button');art.setAttribute('aria-label','Ganze Sammelkarte vergrößern');const go=()=>{fullCard.querySelector('.fs-card-inner').replaceChildren(card.cloneNode(true));fullCard.hidden=false;fullCard.querySelector('.fs-card-close').focus()};art.onclick=go;art.onkeydown=e=>{if(e.key==='Enter')go();};}}
+ }
+ if(visiblePanel==='combat'){const buttons=area.querySelectorAll('.fs-combat-grid button');buttons.forEach(b=>{b.setAttribute('aria-label',b.textContent.trim());b.style.minHeight='98px';});}
+}
+
+renderPanel();
+})();
+
+POS 950561 ck=go;art.onkeydown=e=>{if(e.key==='Enter')go();};}}
+ }
+ if(visiblePanel==='combat'){const buttons=area.querySelectorAll('.fs-combat-grid button');buttons.forEach(b=>{b.setAttribute('aria-label',b.textContent.trim());b.style.minHeight='98px';});}
+}
+
+renderPanel();
+})();
+
+----- CSS combat matches 15 -----
+POS 2642 osition:absolute;left:16.5%;top:16%;width:77%;height:72%;z-index:8;overflow:visible;display:flex;flex-direction:column;pointer-events:auto}
+#forst-stage.fs-combat #fs-body{top:36.4%;height:51.6%}
+#fs-body #veil{position:relative!important;display:flex!important;flex:1!important;min-height:0!important;height:100%!important;max-height:none!important;width:100%!important;left:auto!important;top:auto!important;right:auto!important;bottom:auto!important;inset:auto!important;background:none!important;border:0!important;b
+POS 11558 !important}#fs-body .storyChoice span{font-size:12px!important}}
+@media(max-height:730px){#fs-banner{height:13%}#fs-body{top:14%;height:74%}#forst-stage.fs-combat #fs-body{top:32%;height:56%}#fs-body #veil #sheetTitle{font-size:23px!important;padding:2px 0 6px!important}}
+
+#fs-imgbtn{opacity:0!important;right:5.8%!important;top:5.8%!important;width:65px!important;height:60px!important}
+#fs-nav #fs-journal{opacity:0!important;left:2%!important;bottom:3.5%!important;width:72px!important;height:65px!important}
+#fs-nav
+POS 12141 tant;width:23%!important}
+
+/* Real combat actions as the illustrated cards from the reference: each calls the original engine. */
+#fs-body .fs-combat-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;margin:12px 0 28px!important}
+#fs-body .fs-combat-grid .fs-fight-card{min-width:0!important;min-height:111px!important;display:flex!important;align-items:end!important;justify-content:center!important;padding:13px 4px!important;position:relative!important;font:bold cl
+POS 12293 id{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;margin:12px 0 28px!important}
+#fs-body .fs-combat-grid .fs-fight-card{min-width:0!important;min-height:111px!important;display:flex!important;align-items:end!important;justify-content:center!important;padding:13px 4px!important;position:relative!important;font:bold clamp(11px,3.35vw,14px)/1.15 Georgia,serif!important;text-align:center!important;border:3px ridge #af8d4a!important;border-radius:5px!important;color:#fff
+POS 13293 s-body .hpPair{margin:4px 0!important;gap:5px!important}
+#fs-body .fightSubtitle{font-size:12px!important;margin:1px 0!important}
+#fs-body .fs-combat-grid button:disabled{filter:grayscale(.7)!important}
+
+/* Illustrated bestiary: the expanded card is a full-width parchment, not a small inset. */
+#fs-body .cardZoom,#fs-body .cardZoomFront{width:100%!important;max-width:100%!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!i
+POS 16366 nt;padding:4px 8px 5px!important;background:linear-gradient(90deg,transparent,#0010098e 12%,#001009a8 86%,transparent)!important}
+#fs-body .fs-combat-grid{position:relative!important;z-index:6!important;gap:7px!important;margin:10px 0 22px!important}
+#fs-body .fs-combat-grid .fs-fight-card,#fs-body .fs-combat-grid .fs-fight-card.engraved{color:#fff5d6!important;-webkit-text-fill-color:#fff5d6!important;min-height:119px!important;align-items:flex-end!important;justify-content:center!important;padding:70px 3px 12px!i
+POS 16487 portant}
+#fs-body .fs-combat-grid{position:relative!important;z-index:6!important;gap:7px!important;margin:10px 0 22px!important}
+#fs-body .fs-combat-grid .fs-fight-card,#fs-body .fs-combat-grid .fs-fight-card.engraved{color:#fff5d6!important;-webkit-text-fill-color:#fff5d6!important;min-height:119px!important;align-items:flex-end!important;justify-content:center!important;padding:70px 3px 12px!important;text-align:center!important;font:700 clamp(12px,3.25vw,16px)/1.06 Georgia,serif!important;letter-spacing:-.015em
+POS 16527 on:relative!important;z-index:6!important;gap:7px!important;margin:10px 0 22px!important}
+#fs-body .fs-combat-grid .fs-fight-card,#fs-body .fs-combat-grid .fs-fight-card.engraved{color:#fff5d6!important;-webkit-text-fill-color:#fff5d6!important;min-height:119px!important;align-items:flex-end!important;justify-content:center!important;padding:70px 3px 12px!important;text-align:center!important;font:700 clamp(12px,3.25vw,16px)/1.06 Georgia,serif!important;letter-spacing:-.015em!important;text-shadow:0 2px 4px #000!im
+POS 16952 px)/1.06 Georgia,serif!important;letter-spacing:-.015em!important;text-shadow:0 2px 4px #000!important;overflow:hidden!important}
+#fs-body .fs-combat-grid .fs-fight-card::before,#fs-body .fs-combat-grid .fs-fight-card::after{content:none!important;display:none!important}
+#fs-body #sheetBody{scrollbar-width:thin!important;scrollbar-color:#8d663a transparent!important}
+#fs-body #sheetBody .battleReport{font-size:clamp(13px,3.5vw,16px)!important;line-height:1.35!important}
+#fs-imgbtn{z-index:21!important;min-width:47p
+POS 17000 -.015em!important;text-shadow:0 2px 4px #000!important;overflow:hidden!important}
+#fs-body .fs-combat-grid .fs-fight-card::before,#fs-body .fs-combat-grid .fs-fight-card::after{content:none!important;display:none!important}
+#fs-body #sheetBody{scrollbar-width:thin!important;scrollbar-color:#8d663a transparent!important}
+#fs-body #sheetBody .battleReport{font-size:clamp(13px,3.5vw,16px)!important;line-height:1.35!important}
+#fs-imgbtn{z-index:21!important;min-width:47px!important;min-height:47px!important}
+@media(ma
+POS 17405 eight:1.35!important}
+#fs-imgbtn{z-index:21!important;min-width:47px!important;min-height:47px!important}
+@media(max-width:350px){#fs-body .fs-combat-grid .fs-fight-card{min-height:100px!important;padding:55px 2px 12px!important;font-size:11.5px!important}#fs-body button.storyChoice span{font-size:12.5px!important}}
+
+/* V37: final verified single surface. Reserve the foreground bag's space. */
+#fs-body{height:69.3%!important}
+#forst-stage.fs-combat #fs-body{height:48.3%!important}
+#fs-body #veil #sheetBody{padding:
+POS 17695 ont-size:12.5px!important}}
+
+/* V37: final verified single surface. Reserve the foreground bag's space. */
+#fs-body{height:69.3%!important}
+#forst-stage.fs-combat #fs-body{height:48.3%!important}
+#fs-body #veil #sheetBody{padding:9px clamp(15px,5.4vw,22px) 50px!important;color:#24170d!important;font:clamp(16px,4.25vw,19px)/1.56 Georgia,'Times New Roman',serif!important;overflow-wrap:break-word!important}
+#fs-body #veil #sheetTitle{padding:9px 5px 10px!important;font-size:clamp(22px,6vw,29px)!important;line-height:1
+POS 19135 storyChoice:focus-visible{outline:3px solid #fff2bd!important}
+#fs-body .choices{gap:9px!important;margin:17px 0 34px!important}
+
+#fs-body .fs-combat-grid .fs-fight-card{box-shadow:0 4px 7px #201508ad,inset 0 0 0 2px #aa7c3b!important;border-color:#d2a85f!important;border-radius:7px!important}
+#fs-body .hpPair{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important}
+#fs-body .hpBox{border-radius:6px!important;border:1px solid #ab8654!important;background:linear-gradient(#fff3d8,#e8cc98)!imp
+POS 27300 ant}#fs-body .diceReward{min-height:71px!important}}
+
+
+/* V40 – Erweiterung IN der vorhandenen Spieloberfläche, keine zweite Spielebene. */
+#fs-nav #fs-options{position:absolute;left:1.1%!important;top:22.3%!important;z-index:57!important;width:76px!important;min-height:55px!important;border:2px ridge #b99558!important;border-radius:5px!important;background:linear-gradient(#374334ee,#141b17f5)!important;color:#f7e4b6!important;font:700 12px Georgia,serif!important;text-shadow:0 1px 3px #000!important;padding:5px!im
+POS 27709 lor:#f7e4b6!important;font:700 12px Georgia,serif!important;text-shadow:0 1px 3px #000!important;padding:5px!important;opacity:1!important}
+#fs-nav #fs-options:before{content:'⚙';display:block;font-size:21px;color:#ecc680}
+#fs-nav #fs-bag{z-index:59!important;min-width:85px!important;min-height:65px!important;right:0!important;bottom:0!important}
+#fs-nav #fs-bag:after{content:'INVENTAR';position:absolute;bottom:11%;right:5%;display:block;background:#142819ec;border:1px ridge #dcb06a;padding:4px 6px;border-radius:4p
+function names: FORST_VISUALS, app, stage, old, img, setArt, pic, k, val, combat, name, keys, q, match, sync, fsPanelTitles, caption, match, name, verb, chapter, raw, sentinel, header, bt, paintChoices, cards, label, src, words, paintCombat, area, existing, primary, retreat, grid, attach, actionText, values, inventory, observedArea, watch, originalCreatureCard, name, isBoar, portrait, strength, gems, habitat, oldRender, ret, oldScene, ret, send, zoom, closeZoom, opt, i, leaf, fullCard, closeFullCard, invSort, v40Inventory, area, it, picture, img, nav, btn, v40InventorySort, key, buttons, v40FireAudio, C, ctx, i, source, v40Polish, area, fire, btn, card, art, go, buttons
+IDs: app,veil,dynamicScene,fs-banner-img,fs-beast-img,fs-body,sheetTitle,fs-trophy,fs-values,fs-journal,fs-bag,fs-fullscreen-img,fs-fullscreen,fs-banner,fs-imgbtn,fs-close-image,fs-nav
