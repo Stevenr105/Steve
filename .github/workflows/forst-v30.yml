@@ -5,7 +5,7 @@ on:
     branches: [master]
     paths:
       - 'forst-privat-2026/build-v39.cjs'
-            - '.github/workflows/forst-v30.yml'
+      - '.github/workflows/forst-v30.yml'
 permissions:
   contents: write
 jobs:
