@@ -4,7 +4,8 @@ on:
   push:
     branches: [master]
     paths:
-      - 'forst-privat-2026/build-v37.cjs'
+      - 'forst-privat-2026/build-v38.cjs'
+      - 'forst-privat-2026/v38-top-tools.json'
       - '.github/workflows/forst-v30.yml'
 permissions:
   contents: write
@@ -18,15 +19,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Assemble and syntax-check V37
-        run: node forst-privat-2026/build-v37.cjs
-      - name: Publish only current playable game
+      - name: Build and verify V38 MP3 and 3D
+        run: node forst-privat-2026/build-v38.cjs
+      - name: Publish one current Safari game
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add forst-v37/index.html forst-final/index.html
+          git add forst-v38/index.html forst-final/index.html
           if ! git diff --cached --quiet; then
-            git commit -m 'Publish tested one-stage Forst V37'
+            git commit -m 'Publish Forst V38 with MP3 and 3D'
             git push
           fi
