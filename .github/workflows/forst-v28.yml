@@ -1,0 +1,33 @@
+name: Forst V28 spielbar
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'forst-privat-2026/build-v28.cjs'
+      - 'forst-privat-2026/forst-book-v28-plain.json'
+      - '.github/workflows/forst-v28.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assemble complete Safari game
+        run: node forst-privat-2026/build-v28.cjs
+      - name: Publish playable V28
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add forst-v28/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish playable Forst V28'
+            git push
+          fi
