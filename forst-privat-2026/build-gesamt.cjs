@@ -92,11 +92,30 @@ const unlockHelp=String.raw`
  else window.addEventListener('load',show,{once:true});
 })();
 </script>`;
-game=game.replace('</body>',unlockHelp+'</body>');
+// The private book PDF was already supplied by the owner. Bundle readable passages
+// directly into the browser game; no key, password, download or network fetch needed.
+const plainBook=fs.readFileSync(path.join(dir,'forst-buch-klartext.json'),'utf8');
+const sections=JSON.parse(plainBook);
+if(Object.keys(sections).length!==400 || !sections['1']?.t || !sections['238']?.t ||
+   !sections['238'].t.includes('221') || !sections['400']?.t)throw Error('Plain book is incomplete');
+if(plainBook.includes('</script>'))throw Error('Unexpected HTML tag inside book text');
+if(!game.includes('let BOOK = {};')||!game.includes('let BOOK_READY = false'))throw Error('Expected locked book state missing');
+game=game.replace('let BOOK = {};','let BOOK = '+plainBook+';');
+game=game.replace('let BOOK_READY = false','let BOOK_READY = true');
+game=game.replace(/const ENCRYPTED_STORY = '[^']+';/,'');
+game=game.replace(/const STORY_NONCE = '[^']+';/,'');
+const unlockStart=game.indexOf('async function unlockBook(){');
+const unlockEnd=game.indexOf('function needBook()',unlockStart);
+if(unlockStart<0 || unlockEnd-unlockStart<300 || unlockEnd-unlockStart>1500)throw Error('Unexpected book unlock implementation');
+game=game.slice(0,unlockStart)+
+  "async function unlockBook(){BOOK_READY=true;BOOK_FAILED=null;const el=document.getElementById('statusText');if(el)el.textContent='400 Abschnitte bereit';return true;}\n"+
+  game.slice(unlockEnd);
+game=game.replace('<title>Der Forst der Finsternis — Gesamtfassung V26</title>','<title>Der Forst der Finsternis – Sofort spielbar</title>');
+
 const opens=(game.match(/<script\b/gi)||[]).length,closes=(game.match(/<\/script>/gi)||[]).length;
-if(opens!==6||closes!==6||!game.startsWith('<!doctype html>'))throw Error('Generated HTML validation failed: '+opens+'/'+closes);
+if(opens!==5||closes!==5||!game.startsWith('<!doctype html>'))throw Error('Generated HTML validation failed: '+opens+'/'+closes);
 if(game.includes('raw.githack.com'))throw Error('External V17 dependency remains');
-if(!game.includes('ENCRYPTED_STORY'))throw Error('Protected book data missing');
+if(game.includes('const ENCRYPTED_STORY =')||game.includes('id="forst-key-helper"')||!game.includes('let BOOK = {"1"'))throw Error('Plain book bundle missing or unlock prompt remains');
 if(!game.includes('v25BagDepthRefinement')||!game.includes('spatialV25Style'))throw Error('V25 visuals missing');
 // QA: reject duplicated embedded images, invalid UTF-8 and old runtime loaders.
 const art=[...game.matchAll(/data:image\/(?:png|webp|jpeg|jpg);base64,[A-Za-z0-9+/=]+/g)].map(m=>m[0]);
@@ -109,7 +128,7 @@ game=game.replace('</body>',stableStyle+'</body>');
 // Check every inline game script, not just HTML tag counts, before publishing.
 const vm = require('node:vm');
 const inlineScripts=[...game.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
-if(inlineScripts.length!==6)throw Error('Unexpected inline script count: '+inlineScripts.length);
+if(inlineScripts.length!==5)throw Error('Unexpected inline script count: '+inlineScripts.length);
 for(let i=0;i<inlineScripts.length;i++){
   try{new vm.Script(inlineScripts[i][1],{filename:'forst-inline-'+(i+1)+'.js'});}
   catch(e){throw Error('Inline JavaScript '+(i+1)+' is invalid: '+e.message)}
