@@ -29,16 +29,17 @@ if not assets.startswith('const SKIN_ASSETS=') or not assets.endswith(';'):
 
 for name in ('v23polish','v24-engraved-skin','spatialV25Style',
              'v25BagDepthRefinement','forst-depth-order',
-             'forst-verified-depth-v27','forst-v29-depth','forst-v30-design'):
+             'forst-verified-depth-v27','forst-v28-foreground',
+             'forst-v29-depth','forst-v30-design'):
     pattern=rf'<style id="{re.escape(name)}">[\s\S]*?</style>'
     html,n=re.subn(pattern,'',html,count=1)
-    if n!=1:
+    if n!=1 and name not in ('forst-verified-depth-v27','forst-v28-foreground'):
         raise RuntimeError('Could not discard old style '+name)
 
-for name in ('forst-verified-story-and-combat-v27','forst-v30-behavior'):
+for name in ('forst-verified-story-and-combat-v27','forst-v28-script','forst-v30-behavior'):
     pattern=rf'<script id="{re.escape(name)}">[\s\S]*?</script>'
     html,n=re.subn(pattern,'',html,count=1)
-    if n!=1:
+    if n!=1 and name not in ('forst-verified-story-and-combat-v27','forst-v28-script'):
         raise RuntimeError('Could not discard old controller '+name)
 
 # Reuse V30's illustrated graphical shell, but ensure it is one stylesheet.
