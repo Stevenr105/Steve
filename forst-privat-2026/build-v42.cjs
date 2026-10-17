@@ -31,7 +31,7 @@ h=h.slice(0,a+28)+c+'\n'+css+h.slice(b);
 const open='<script id="forst-one-controller">';
 a=h.indexOf(open);b=h.indexOf('</script>',a);
 if(a<0||b<0)throw Error('Controller fehlt');
-let js=h.slice(a+open.length,b);
+let js=h.slice(a+open.length,b);console.log('V42 diagnostic', {html:h.length,scriptStart:a,scriptEnd:b,scriptLength:js.length,hasV40:js.includes('function v40Camp(){'),old:h.indexOf('function v40Camp(){'),setArt:h.indexOf('function setArt(){')});
 function swap(from,to,source){const x=js.indexOf(from),y=js.indexOf(to,x);if(x<0||y<0)throw Error('Bereich fehlt: '+from);js=js.slice(0,x)+source+'\n'+js.slice(y);}
 swap('function v40Camp(){','function v40Card(){',[
 'function v40Camp(){',
