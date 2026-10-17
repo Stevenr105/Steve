@@ -4,8 +4,7 @@ on:
   push:
     branches: [master]
     paths:
-      - 'forst-privat-2026/build-v36.cjs'
-      - 'forst-privat-2026/v36-verified-skin.json'
+      - 'forst-privat-2026/build-v37.cjs'
       - '.github/workflows/forst-v30.yml'
 permissions:
   contents: write
@@ -19,15 +18,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Assemble and syntax-check V36
-        run: node forst-privat-2026/build-v36.cjs
+      - name: Assemble and syntax-check V37
+        run: node forst-privat-2026/build-v37.cjs
       - name: Publish only current playable game
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add forst-v36/index.html forst-final/index.html
+          git add forst-v37/index.html forst-final/index.html
           if ! git diff --cached --quiet; then
-            git commit -m 'Publish tested one-stage Forst V36'
+            git commit -m 'Publish tested one-stage Forst V37'
             git push
           fi
