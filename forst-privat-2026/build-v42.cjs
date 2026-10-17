@@ -32,7 +32,7 @@ const open='<script id="forst-one-controller">';
 a=h.indexOf(open);b=h.indexOf('</script>',a);
 if(a<0||b<0)throw Error('Controller fehlt');
 let js=h.slice(a+open.length,b);console.log('V42 diagnostic', {html:h.length,scriptStart:a,scriptEnd:b,scriptLength:js.length,hasV40:js.includes('function v40Camp(){'),old:h.indexOf('function v40Camp(){'),setArt:h.indexOf('function setArt(){')});
-function swap(from,to,source){const x=js.indexOf(from),y=js.indexOf(to,x);if(x<0||y<0)throw Error('Bereich fehlt: '+from);js=js.slice(0,x)+source+'\n'+js.slice(y);}
+function swap(from,to,source){const x=js.indexOf(from),y=js.indexOf(to,x);if(x<0||y<0){if(from==='function v40Camp(){'){js+='\n'+source+'\n';return;}throw Error('Bereich fehlt: '+from);}js=js.slice(0,x)+source+'\n'+js.slice(y);}
 swap('function v40Camp(){','function v40Card(){',[
 'function v40Camp(){',
 ' const area=veil.querySelector("#sheetBody");if(!area)return;',
@@ -41,8 +41,8 @@ swap('function v40Camp(){','function v40Card(){',[
 ' const picture=document.createElement("img");picture.src=ART.camp||SCENE_ART.camp_scene;picture.alt="Einsamer Wanderer an einem echten Lagerfeuer";',
 ' scene.appendChild(picture);area.prepend(scene);',
 ' const button=document.createElement("button");button.type="button";button.className="fs-fire-audio";',
-' const label=()=>{button.textContent=fireOn?"🔊 Feuerknistern ausschalten":"♫ Feuerknistern einschalten";button.setAttribute("aria-pressed",String(fireOn))};',
-' button.onclick=()=>{fireAudio(!fireOn);label()};label();scene.after(button);',
+' const label=()=>{button.textContent=window.__fs42CampOn?"🔊 Feuerknistern ausschalten":"♫ Feuerknistern einschalten";button.setAttribute("aria-pressed",String(!!window.__fs42CampOn))};',
+' button.onclick=()=>{fs42CampAudio(!window.__fs42CampOn);label()};label();scene.after(button);',
 '}'
 ].join('\n'));
 swap('function setArt(){','function sync(){',[
@@ -55,10 +55,19 @@ swap('function setArt(){','function sync(){',[
 '  const key=typeof monsterImage==="function"?monsterImage(name):"beast";',
 '  const art=/wildschwein|eber|keiler/i.test(name)?FORST_VISUALS.boar:(SCENE_ART[key]||SCENE_ART.ork_battle||current);',
 '  if(img.src!==art)img.src=art;foeImage.src=art;foeImage.alt=name+" im Angriff";',
-' }else if(img.src!==current)img.src=current;',
+' }else if(img.src!==current)img.src=current;if(visiblePanel==='camp')queueMicrotask(()=>v40Camp());',
 '}'
 ].join('\n'));
 const sound=[
+'function fs42CampAudio(on){',
+' window.__fs42CampOn=!!on;',
+' if(!on){if(window.__fs42CampNode){try{window.__fs42CampNode.source.stop();window.__fs42CampNode.ctx.close()}catch(e){}window.__fs42CampNode=null;}return}',
+' try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const ctx=new A();if(ctx.state==="suspended")ctx.resume();',
+' const buffer=ctx.createBuffer(1,ctx.sampleRate*3,ctx.sampleRate),a=buffer.getChannelData(0);let v=0;',
+' for(let i=0;i<a.length;i++){v=v*.8+(Math.random()*2-1)*.2;a[i]=v*.22+(Math.random()<.001?(Math.random()-.5)*.6:0)}',
+' const source=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain();source.buffer=buffer;source.loop=true;f.type="lowpass";f.frequency.value=1600;g.gain.value=.35;source.connect(f);f.connect(g);g.connect(ctx.destination);source.start();window.__fs42CampNode={source,ctx}',
+' }catch(e){window.__fs42CampOn=false}',
+'}',
 'const fs42Key="forst-v42-wuerfelton";',
 'let fs42SoundOn=localStorage.getItem(fs42Key)!=="off",fs42Audio=null;',
 'function fs42DiceSound(mode){',
