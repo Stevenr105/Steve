@@ -1,11 +1,10 @@
-name: Forst – Hauptversion V30
+name: Forst – eine Hauptversion
 on:
   workflow_dispatch:
   push:
     branches: [master]
     paths:
-      - 'forst-privat-2026/build-v30.cjs'
-      - 'forst-privat-2026/v30-rendered-skin.html'
+      - 'forst-privat-2026/build-v31.py'
       - '.github/workflows/forst-v30.yml'
 permissions:
   contents: write
@@ -19,15 +18,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify and assemble full V30
-        run: node forst-privat-2026/build-v30.cjs
-      - name: Publish current game
+      - name: Remove old interface layers and test complete V31
+        run: python3 forst-privat-2026/build-v31.py
+      - name: Publish one current Safari game
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add forst-v30/index.html forst-final/index.html
+          git add forst-v31/index.html forst-final/index.html
           if ! git diff --cached --quiet; then
-            git commit -m 'Publish Forst V30 illustrated playable game'
+            git commit -m 'Publish simplified single-skin Forst V31'
             git push
           fi
