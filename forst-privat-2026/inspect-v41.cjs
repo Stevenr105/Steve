@@ -25,5 +25,27 @@ sample('handlers',js,/function v40Polish|function v40FireAudio|renderPanel\(\);\
 sample('CSS combat',css,/#forst-stage\.fs-combat #fs-body|#fs-nav #fs-options|fs-combat-grid/g,140,380,15);
 lines.push('function names: '+[...js.matchAll(/(?:function|const|let)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:\(|=)/g)].map(m=>m[1]).join(', '));
 lines.push('IDs: '+[...new Set([...js.matchAll(/getElementById\(['"]([^'"]+)/g)].map(x=>x[1]))].join(','));
+
+for(let i=0;i<4;i++){
+ const src=blocks[i]?.[1]||'';
+ lines.push('========== ENGINE SCRIPT '+i+' / '+src.length+' ==========');
+ for(const q of [
+ 'function renderPanel','function openPanel','function diceCollectionMarkup','function rollCreationStat','function rollDice',
+ 'function renderCombat','function battleRound','function playDice','diceStyle','diceMaterial',
+ 'diceSelect','diceCollection','diceReward','function renderOptions','case "options"', "case 'options'",
+ 'function victory','completed','victory','finishGame','wonGame','endAdventure','victorious','fullVictory',
+ 'function saveGame','function cardArt','function cardArtKey','function showDice','function renderInventory',
+ 'function renderCamp','function showCamp','function drawDice','function animateDice','optionsMarkup',
+ 'diceRoll','diceSound','rollSound','<audio','state.combat','state.items',
+ 'function setScene','ENEMIES','CREATURES'
+ ]){
+ const at=src.indexOf(q);
+ if(at>=0)lines.push('TERM '+q+' @'+at+'\\n'+src.slice(Math.max(0,at-150),Math.min(src.length,at+1900)));
+ }
+ const func=[...src.matchAll(/function\\s+([A-Za-z_][A-Za-z_0-9]*)\\s*\\(/g)].map(m=>m[1]);
+ lines.push('FUNCTIONS '+func.slice(0,130).join(', '));
+}
+lines.push('SCENE keys / visuals in controller '+(js.match(/(?:SCENE_ART|FORST_VISUALS)[^.]{0,40}/g)||[]).slice(-20));
+
 const dest=path.resolve(__dirname,'v41-inspection.txt');fs.writeFileSync(dest,lines.join('\n'),'utf8');
 console.log('V41 audit '+base.length+'; controller '+js.length+'; wrote '+fs.statSync(dest).size+' bytes');
