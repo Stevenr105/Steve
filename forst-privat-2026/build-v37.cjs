@@ -9,8 +9,8 @@ if((html.match(/id="forst-one-stage"/g)||[]).length!==1)throw Error('More than o
 html=html.replace(p,(all,old)=>'<style id="forst-one-stage">'+old+css+'</style>');
 const q=/<script id="forst-one-controller">([\s\S]*?)<\/script>/;
 html=html.replace(q,(all,code)=>{
- if(!code.includes("hasPaintedWords?'100% 100%,auto 185%'"))throw Error('Card texture source changed');
- let newer=code.replace("hasPaintedWords?'100% 100%,auto 185%'","hasPaintedWords?'100% 100%,auto 145%'");
+ if(!/(?:hasPaintedWords|words)\?'100% 100%,auto 185%'/.test(code))throw Error('Card texture source changed');
+ let newer=code.replace(/((?:hasPaintedWords|words)\?'100% 100%,auto )185%'/g,"$1145%'");
  if(!newer.includes("'100% 100%,auto 185%','important'"))throw Error('Combat texture source changed');
  newer=newer.replace("'100% 100%,auto 185%','important'","'100% 100%,auto 145%','important'");
  return '<script id="forst-one-controller">'+newer+'</script>';
