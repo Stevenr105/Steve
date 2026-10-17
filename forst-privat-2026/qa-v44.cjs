@@ -36,6 +36,19 @@ const {chromium}=require('playwright-core');
    });
    if(!(art.width>0)||art.box==='none'||!art.stage.includes('fs-active-fight'))failures.push(width+'px: Waldschrat image invisible '+JSON.stringify(art));
    else notes.push(width+'px: Waldschrat artwork '+art.width+'px loaded');
+   if(width===390){
+    const foeAudit=await page.evaluate(async()=>{
+      const names=[...new Set(Object.entries(BOOK).flatMap(([n,entry])=>findOpponents(entry.t,n).map(e=>e.name)))];
+      const arts=new Map(names.map(name=>[name,window.fs44EnemyArt(name)]));
+      const missing=names.filter(name=>!arts.get(name));
+      const unique=[...new Set([...arts.values()])];
+      let broken=0;
+      for(const src of unique){const im=new Image();im.src=src;try{await im.decode();}catch(e){broken++;}}
+      return {enemies:names.length,uniqueArtwork:unique.length,missingNames:missing,brokenArtwork:broken};
+    });
+    notes.push('Encounter audit '+JSON.stringify(foeAudit));
+    if(foeAudit.missingNames.length||foeAudit.brokenArtwork)failures.push('Enemy artwork broken '+JSON.stringify(foeAudit));
+   }
    const overflow=await page.evaluate(()=>{
     const c=document.getElementById('sheetBody');
     return {scroll:c.scrollHeight,client:c.clientHeight};
