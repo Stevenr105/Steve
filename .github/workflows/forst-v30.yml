@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - 'forst-privat-2026/build-v44.cjs'
+      - 'forst-privat-2026/qa-v44.cjs'
       - '.github/workflows/forst-v30.yml'
 permissions:
   contents: write
@@ -20,6 +21,10 @@ jobs:
           node-version: '22'
       - name: Build and syntax-test V44 game
         run: node forst-privat-2026/build-v44.cjs
+      - name: Install browser smoke-test harness
+        run: npm install --no-save --ignore-scripts playwright-core@1.56.1
+      - name: Test iPhone layouts and navigation in Chromium
+        run: node forst-privat-2026/qa-v44.cjs
       - name: Publish current Safari game
         shell: bash
         run: |
