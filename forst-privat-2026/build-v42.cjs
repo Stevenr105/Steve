@@ -55,7 +55,7 @@ swap('function setArt(){','function sync(){',[
 '  const key=typeof monsterImage==="function"?monsterImage(name):"beast";',
 '  const art=/wildschwein|eber|keiler/i.test(name)?FORST_VISUALS.boar:(SCENE_ART[key]||SCENE_ART.ork_battle||current);',
 '  if(img.src!==art)img.src=art;foeImage.src=art;foeImage.alt=name+" im Angriff";',
-' }else if(img.src!==current)img.src=current;if(visiblePanel==='camp')queueMicrotask(()=>v40Camp());',
+' }else if(img.src!==current)img.src=current;if(visiblePanel==="camp")queueMicrotask(()=>v40Camp());',
 '}'
 ].join('\n'));
 const sound=[
