@@ -34,5 +34,6 @@ jobs:
           git add -f forst-v42/index.html 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m 'Publish V42 improvements'
-            git push
+            git pull --rebase origin master
+            git push origin HEAD:master
           fi
