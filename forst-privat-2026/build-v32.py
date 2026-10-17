@@ -73,7 +73,7 @@ js=js.replace(before,after)
 before="""else if(i%3===0)art.src=SKIN_ASSETS.cards.attack;
   else if(i%3===1)art.src=SKIN_ASSETS.cards.dodge;
   else art.src=SKIN_ASSETS.cards.inventory;"""
-after="""else art.src=SCENE_ART[choiceArtKey(label,Number((card.getAttribute('onclick')||'').match(/choose\((\d+)/)?.[1]||0))]||SCENE_ART.forest_path;"""
+after=r"""else art.src=SCENE_ART[choiceArtKey(label,Number((card.getAttribute('onclick')||'').match(/choose\((\d+)/)?.[1]||0))]||SCENE_ART.forest_path;"""
 if before not in js:raise RuntimeError('Incorrect default choice art missing')
 js=js.replace(before,after)
 before="const nativeRender=renderPanel;\nrenderPanel=function(){const r=nativeRender.apply(this,arguments);renderSkin();makeCards();return r};"
