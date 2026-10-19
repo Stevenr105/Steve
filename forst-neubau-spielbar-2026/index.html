@@ -1,0 +1,15 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#071217"><title>Der Forst der Finsternis – Spiel starten</title><style>html,body{margin:0;min-height:100%;background:#071217;color:#e6d2a2;font-family:Georgia,serif}main{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(ellipse at center,#21423e,#071217 72%)}h1{font-size:clamp(25px,7vw,45px);line-height:1.2;max-width:680px;letter-spacing:.04em;margin:0 0 20px}p{font-size:17px;max-width:420px;line-height:1.5}progress{appearance:none;width:min(320px,85vw);height:9px;border:1px solid #95754a;border-radius:20px;overflow:hidden}progress::-webkit-progress-bar{background:#162c2c}progress::-webkit-progress-value{background:#c9a363}button{border:1px solid #c9a363;background:#193432;padding:12px 22px;border-radius:8px;color:#eed9ae;font-size:16px}</style></head><body><main id="loading"><h1>DER FORST DER FINSTERNIS</h1><p id="notice">Das Abenteuer wird geladen …</p><progress id="bar" max="25" value="0"></progress><p id="counter" aria-live="polite">0 / 25</p><button id="retry" type="button" hidden>Erneut versuchen</button></main><script>
+(async()=>{
+ const set=(n)=>{document.getElementById('bar').value=n;document.getElementById('counter').textContent=n+' / 25';};
+ try{
+ const result=new Array(25);let completed=0,next=0;
+ async function worker(){while(next<25){const i=next++;const name='data/part_'+String(i+1).padStart(2,'0')+'.txt';const response=await fetch(name,{cache:'force-cache'});if(!response.ok)throw Error('Spielinhalt '+(i+1)+' konnte nicht geladen werden (HTTP '+response.status+')');const encoded=(await response.text()).trim();const raw=atob(encoded);const bytes=new Uint8Array(raw.length);for(let k=0;k<raw.length;k++)bytes[k]=raw.charCodeAt(k);result[i]=bytes;set(++completed);}}
+ await Promise.all(Array.from({length:5},worker));
+ document.getElementById('notice').textContent='Das Abenteuer wird geöffnet …';
+ const decoder=new TextDecoder('utf-8'); const texts=[];
+ for(let i=0;i<result.length;i++) texts.push(decoder.decode(result[i],{stream:i<result.length-1}));
+ const game=texts.join(''); if(!game.startsWith('<!doctype html>'))throw Error('Spieldatei unvollständig');
+ document.open();document.write(game);document.close();
+ }catch(e){document.getElementById('notice').textContent='Das Spiel konnte nicht geladen werden: '+(e?.message||e);const b=document.getElementById('retry');b.hidden=false;b.onclick=()=>location.reload();}
+})();
+</script></body></html>
