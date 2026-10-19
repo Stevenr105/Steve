@@ -3,7 +3,7 @@
  const set=(n)=>{document.getElementById('bar').value=n;document.getElementById('counter').textContent=n+' / 25';};
  try{
  const result=new Array(25);let completed=0,next=0;
- async function worker(){while(next<25){const i=next++;const name='data/part_'+String(i+1).padStart(2,'0')+'.txt';const response=await fetch(name,{cache:'force-cache'});if(!response.ok)throw Error('Spielinhalt '+(i+1)+' konnte nicht geladen werden (HTTP '+response.status+')');const encoded=(await response.text()).trim();const raw=atob(encoded);const bytes=new Uint8Array(raw.length);for(let k=0;k<raw.length;k++)bytes[k]=raw.charCodeAt(k);result[i]=bytes;set(++completed);}}
+ async function worker(){while(next<25){const i=next++;const name='data/part_'+String(i+1).padStart(2,'0')+'.txt';const response=await fetch(name,{cache:'force-cache'});if(!response.ok)throw Error('Spielinhalt '+(i+1)+' konnte nicht geladen werden (HTTP '+response.status+')');const bytes=new Uint8Array(await response.arrayBuffer());result[i]=bytes;set(++completed);}}
  await Promise.all(Array.from({length:5},worker));
  document.getElementById('notice').textContent='Das Abenteuer wird geöffnet …';
  const decoder=new TextDecoder('utf-8'); const texts=[];
